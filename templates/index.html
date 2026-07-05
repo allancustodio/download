@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instagram Downloader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg       : #0C0C10;
+      --surface  : #141418;
+      --surface2 : #1C1C22;
+      --border   : #2A2A34;
+      --accent   : #818CF8;
+      --success  : #4ADE80;
+      --error    : #F87171;
+      --warn     : #FBBF24;
+      --text     : #E2E2EE;
+      --muted    : #6B6B80;
+      --mono     : 'JetBrains Mono', monospace;
+      --sans     : 'Inter', sans-serif;
+      --radius   : 10px;
+    }
+
+    body {
+      font-family   : var(--sans);
+      background    : var(--bg);
+      color         : var(--text);
+      min-height    : 100vh;
+      display       : flex;
+      flex-direction: column;
+      align-items   : center;
+      padding       : 36px 16px 80px;
+    }
+
+    /* ── Header ── */
+    header { text-align: center; margin-bottom: 28px; }
+
+    .logo {
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      gap            : 10px;
+      margin-bottom  : 5px;
+    }
+
+    h1 { font-size: 1.45rem; font-weight: 600; letter-spacing: -.02em; }
+
+    .subtitle { font-size: .82rem; color: var(--muted); font-family: var(--mono); }
+
+    /* ── Auth bar ── */
+    .auth-bar {
+      width         : 100%;
+      max-width     : 640px;
+      background    : var(--surface);
+      border        : 1px solid var(--border);
+      border-radius : var(--radius);
+      padding       : 14px 18px;
+      margin-bottom : 12px;
+      display       : flex;
+      align-items   : center;
+      justify-content: space-between;
+      gap           : 12px;
+    }
+
+    .auth-status {
+      display    : flex;
+      align-items: center;
+      gap        : 8px;
+      font-size  : .85rem;
+    }
+
+    .auth-dot {
+      width        : 8px;
+      height       : 8px;
+      border-radius: 50%;
+      background   : var(--muted);
+      flex-shrink  : 0;
+    }
+    .auth-dot.on  { background: var(--success); }
+    .auth-dot.off { background: var(--muted); }
+
+    .auth-label { color: var(--muted); }
+    .auth-label b { color: var(--text); }
+
+    .auth-actions { display: flex; gap: 8px; align-items: center; }
+
+    .btn-ghost {
+      background   : transparent;
+      border       : 1px solid var(--border);
+      color        : var(--text);
+      font-family  : var(--sans);
+      font-size    : .8rem;
+      font-weight  : 500;
+      padding      : 6px 12px;
+      border-radius: 6px;
+      cursor       : pointer;
+      transition   : border-color .15s, background .15s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); background: rgba(129,140,248,.06); }
+
+    .btn-logout {
+      background   : transparent;
+      border       : 1px solid var(--border);
+      color        : var(--error);
+      font-family  : var(--sans);
+      font-size    : .8rem;
+      font-weight  : 500;
+      padding      : 6px 12px;
+      border-radius: 6px;
+      cursor       : pointer;
+      transition   : border-color .15s, background .15s;
+    }
+    .btn-logout:hover { border-color: var(--error); background: rgba(248,113,113,.06); }
+
+    /* ── Login modal ── */
+    .overlay {
+      position  : fixed;
+      inset     : 0;
+      background: rgba(0,0,0,.65);
+      display   : flex;
+      align-items: center;
+      justify-content: center;
+      z-index   : 200;
+      opacity   : 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .overlay.show { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background   : var(--surface);
+      border       : 1px solid var(--border);
+      border-radius: 14px;
+      padding      : 28px;
+      width        : 100%;
+      max-width    : 380px;
+      transform    : translateY(12px);
+      transition   : transform .2s;
+    }
+    .overlay.show .modal { transform: translateY(0); }
+
+    .modal-header {
+      display      : flex;
+      align-items  : center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+
+    .modal-title { font-size: 1rem; font-weight: 600; }
+
+    .btn-close {
+      background  : transparent;
+      border      : none;
+      color       : var(--muted);
+      font-size   : 1.3rem;
+      cursor      : pointer;
+      line-height : 1;
+      padding     : 2px 6px;
+      border-radius: 4px;
+    }
+    .btn-close:hover { color: var(--text); background: var(--surface2); }
+
+    .modal-field + .modal-field { margin-top: 14px; }
+
+    .modal-field label {
+      display      : block;
+      font-size    : .78rem;
+      font-weight  : 500;
+      color        : var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .modal-field input {
+      width        : 100%;
+      background   : var(--surface2);
+      border       : 1px solid var(--border);
+      border-radius: 7px;
+      padding      : 10px 13px;
+      color        : var(--text);
+      font-family  : var(--mono);
+      font-size    : .875rem;
+      outline      : none;
+      transition   : border-color .15s;
+    }
+    .modal-field input:focus { border-color: var(--accent); }
+    .modal-field input::placeholder { color: var(--muted); }
+
+    .modal-hint {
+      font-size  : .74rem;
+      color      : var(--muted);
+      margin-top : 6px;
+      line-height: 1.5;
+    }
+
+    /* Sessions list */
+    .sessions-list {
+      margin-top   : 14px;
+      border-top   : 1px solid var(--border);
+      padding-top  : 14px;
+      display      : none;
+    }
+    .sessions-list.has-items { display: block; }
+
+    .sessions-label {
+      font-size    : .75rem;
+      color        : var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 8px;
+    }
+
+    .session-item {
+      display        : flex;
+      align-items    : center;
+      justify-content: space-between;
+      padding        : 8px 10px;
+      border-radius  : 6px;
+      cursor         : pointer;
+      transition     : background .15s;
+    }
+    .session-item:hover { background: var(--surface2); }
+
+    .session-name {
+      font-family: var(--mono);
+      font-size  : .83rem;
+      color      : var(--accent);
+    }
+
+    .session-badge {
+      font-size    : .7rem;
+      color        : var(--muted);
+      background   : var(--surface2);
+      border       : 1px solid var(--border);
+      border-radius: 4px;
+      padding      : 2px 7px;
+    }
+
+    /* ── Card ── */
+    .card {
+      width        : 100%;
+      max-width    : 640px;
+      background   : var(--surface);
+      border       : 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow     : hidden;
+    }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; border-bottom: 1px solid var(--border); }
+
+    .tab-btn {
+      flex           : 1;
+      padding        : 14px;
+      background     : transparent;
+      border         : none;
+      color          : var(--muted);
+      font-family    : var(--sans);
+      font-size      : .875rem;
+      font-weight    : 500;
+      cursor         : pointer;
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      gap            : 8px;
+      transition     : color .15s, background .15s;
+      position       : relative;
+    }
+    .tab-btn::after {
+      content   : '';
+      position  : absolute;
+      bottom    : -1px; left: 0; right: 0;
+      height    : 2px;
+      background: var(--accent);
+      opacity   : 0;
+      transition: opacity .15s;
+    }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn.active::after { opacity: 1; }
+    .tab-btn:hover:not(.active) { background: var(--surface2); color: var(--text); }
+
+    /* ── Panels ── */
+    .panel { display: none; padding: 28px; }
+    .panel.active { display: block; }
+
+    /* ── Form ── */
+    .field + .field { margin-top: 18px; }
+
+    label {
+      display      : block;
+      font-size    : .78rem;
+      font-weight  : 500;
+      color        : var(--muted);
+      margin-bottom: 7px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"], input[type="url"] {
+      width        : 100%;
+      background   : var(--surface2);
+      border       : 1px solid var(--border);
+      border-radius: 7px;
+      padding      : 11px 14px;
+      color        : var(--text);
+      font-family  : var(--mono);
+      font-size    : .875rem;
+      outline      : none;
+      transition   : border-color .15s;
+    }
+    input[type="text"]:focus,
+    input[type="url"]:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+
+    .hint {
+      font-size  : .74rem;
+      color      : var(--muted);
+      margin-top : 6px;
+      font-family: var(--mono);
+    }
+
+    /* ── Options ── */
+    .options {
+      display              : grid;
+      grid-template-columns: 1fr 1fr;
+      gap                  : 8px;
+      margin-top           : 18px;
+    }
+
+    .opt-card { position: relative; cursor: pointer; }
+
+    .opt-card input {
+      position: absolute; opacity: 0; width: 0; height: 0;
+    }
+
+    .opt-label {
+      display       : flex;
+      flex-direction: column;
+      gap           : 3px;
+      padding       : 12px 14px;
+      background    : var(--surface2);
+      border        : 1.5px solid var(--border);
+      border-radius : 8px;
+      cursor        : pointer;
+      transition    : border-color .15s, background .15s;
+    }
+    .opt-card input:checked + .opt-label {
+      border-color: var(--accent);
+      background  : rgba(129,140,248,.08);
+    }
+    .opt-label:hover { border-color: var(--muted); }
+    .opt-icon  { font-size: 1.2rem; }
+    .opt-title { font-size: .8rem; font-weight: 600; color: var(--text); }
+    .opt-desc  { font-size: .72rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── Button ── */
+    .btn {
+      width          : 100%;
+      margin-top     : 20px;
+      padding        : 13px;
+      background     : var(--accent);
+      color          : #fff;
+      border         : none;
+      border-radius  : 8px;
+      font-family    : var(--sans);
+      font-size      : .9rem;
+      font-weight    : 600;
+      cursor         : pointer;
+      transition     : opacity .15s, transform .1s;
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      gap            : 8px;
+    }
+    .btn:hover:not(:disabled)  { opacity: .88; }
+    .btn:active:not(:disabled) { transform: scale(.99); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── Log ── */
+    .log-section { width: 100%; max-width: 640px; margin-top: 16px; }
+
+    .log-header {
+      display        : flex;
+      align-items    : center;
+      justify-content: space-between;
+      padding        : 0 4px 8px;
+    }
+
+    .log-title {
+      font-size     : .78rem;
+      font-weight   : 500;
+      color         : var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      display       : flex;
+      align-items   : center;
+      gap           : 8px;
+    }
+
+    .status-dot {
+      width        : 7px;
+      height       : 7px;
+      border-radius: 50%;
+      background   : var(--muted);
+      transition   : background .3s;
+    }
+    .status-dot.active { background: var(--accent); animation: pulse 1.2s infinite; }
+    .status-dot.done   { background: var(--success); }
+    .status-dot.error  { background: var(--error); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .4; }
+    }
+
+    .btn-clear {
+      background  : transparent;
+      border      : none;
+      color       : var(--muted);
+      font-family : var(--sans);
+      font-size   : .78rem;
+      cursor      : pointer;
+      padding     : 2px 6px;
+      border-radius: 4px;
+      transition  : color .15s, background .15s;
+    }
+    .btn-clear:hover { color: var(--text); background: var(--surface2); }
+
+    #log {
+      width      : 100%;
+      height     : 260px;
+      background : var(--surface);
+      border     : 1px solid var(--border);
+      border-radius: var(--radius);
+      padding    : 16px;
+      font-family: var(--mono);
+      font-size  : .8rem;
+      color      : var(--text);
+      overflow-y : auto;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break : break-all;
+    }
+
+    #log .ls { color: var(--success); }
+    #log .le { color: var(--error); }
+    #log .lw { color: var(--warn); }
+    #log .lm { color: var(--muted); }
+    #log .la { color: var(--accent); }
+
+    /* ── Modal tabs ── */
+    .modal-tabs {
+      display       : flex;
+      border-bottom : 1px solid var(--border);
+      margin-bottom : 18px;
+      margin-left   : -28px;
+      margin-right  : -28px;
+      padding-left  : 28px;
+      gap           : 4px;
+    }
+
+    .modal-tab {
+      background  : transparent;
+      border      : none;
+      color       : var(--muted);
+      font-family : var(--sans);
+      font-size   : .8rem;
+      font-weight : 500;
+      padding     : 8px 12px;
+      cursor      : pointer;
+      position    : relative;
+      transition  : color .15s;
+    }
+    .modal-tab::after {
+      content   : '';
+      position  : absolute;
+      bottom    : -1px; left: 0; right: 0;
+      height    : 2px;
+      background: var(--accent);
+      opacity   : 0;
+      transition: opacity .15s;
+    }
+    .modal-tab.active { color: var(--accent); }
+    .modal-tab.active::after { opacity: 1; }
+
+    .modal-panel { display: none; }
+    .modal-panel.active { display: block; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+
+    .step {
+      display   : flex;
+      gap       : 12px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      width        : 22px;
+      height       : 22px;
+      border-radius: 50%;
+      background   : var(--surface2);
+      border       : 1px solid var(--border);
+      color        : var(--accent);
+      font-size    : .72rem;
+      font-weight  : 600;
+      display      : flex;
+      align-items  : center;
+      justify-content: center;
+      flex-shrink  : 0;
+      margin-top   : 1px;
+    }
+
+    .step-body { flex: 1; }
+
+    .step-title {
+      font-size  : .82rem;
+      font-weight: 500;
+      color      : var(--text);
+      margin-bottom: 2px;
+    }
+
+    .step-desc {
+      font-size  : .75rem;
+      color      : var(--muted);
+      line-height: 1.5;
+    }
+
+    .step-desc code {
+      font-family  : var(--mono);
+      font-size    : .75rem;
+      background   : var(--surface2);
+      border       : 1px solid var(--border);
+      border-radius: 3px;
+      padding      : 1px 5px;
+      color        : var(--accent);
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position   : fixed;
+      bottom     : 24px;
+      left       : 50%;
+      transform  : translateX(-50%) translateY(80px);
+      background : var(--surface2);
+      border     : 1px solid var(--border);
+      border-radius: 8px;
+      padding    : 11px 20px;
+      font-size  : .875rem;
+      transition : transform .3s ease;
+      z-index    : 100;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="8" fill="url(#ig)"/>
+      <circle cx="16" cy="16" r="5.5" stroke="#fff" stroke-width="2"/>
+      <circle cx="22.5" cy="9.5" r="1.5" fill="#fff"/>
+      <defs>
+        <linearGradient id="ig" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#f09433"/>
+          <stop offset="50%" stop-color="#dc2743"/>
+          <stop offset="100%" stop-color="#bc1888"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <h1>Instagram Downloader</h1>
+  </div>
+  <p class="subtitle">localhost · yt-dlp + gallery-dl</p>
+</header>
+
+<!-- Auth bar -->
+<div class="auth-bar">
+  <div class="auth-status">
+    <span class="auth-dot off" id="auth-dot"></span>
+    <span class="auth-label" id="auth-label">Não autenticado — downloads públicos apenas</span>
+  </div>
+  <div class="auth-actions">
+    <button class="btn-ghost" id="btn-open-login" onclick="openLogin()">
+      Fazer login
+    </button>
+    <button class="btn-logout" id="btn-logout" style="display:none" onclick="doLogout()">
+      Sair
+    </button>
+  </div>
+</div>
+
+<!-- Card -->
+<div class="card">
+  <!-- Checkbox Global Metadados -->
+  <div style="padding: 12px 20px; background: rgba(129,140,248,.1); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+    <input type="checkbox" id="chk-metadata" style="accent-color: var(--accent); cursor: pointer;" />
+    <label for="chk-metadata" style="margin: 0; color: var(--text); cursor: pointer; text-transform: none; font-size: .85rem;">
+      Salvar Metadados Básicos (Texto/Legenda) — Sem risco
+    </label>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('url', this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Post
+    </button>
+    <button class="tab-btn" onclick="switchTab('profile', this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Perfil
+    </button>
+    <button class="tab-btn" onclick="switchTab('hashtag', this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+      Hashtags
+    </button>
+  </div>
+
+  <!-- URL -->
+  <div class="panel active" id="panel-url">
+    <div class="field">
+      <label>URL do post ou reel</label>
+      <input type="url" id="inp-url" placeholder="https://www.instagram.com/p/ABC123/" />
+      <p class="hint">Cole o link de qualquer post, reel ou IGTV público.</p>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button class="btn" id="btn-url-video" onclick="startUrl('video')" style="margin-top: 0; background: var(--accent);">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Baixar Vídeo / Reel
+      </button>
+      <button class="btn" id="btn-url-photo" onclick="startUrl('photo')" style="margin-top: 0; background: #ec4899;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Baixar Fotos (Carrossel)
+      </button>
+    </div>
+  </div>
+
+  <!-- Profile -->
+  <div class="panel" id="panel-profile">
+    <div class="field">
+      <label>@ do perfil</label>
+      <input type="text" id="inp-username" placeholder="natgeo" />
+      <p class="hint">Sem o @, só o nome de usuário.</p>
+    </div>
+    <div class="field" style="margin-top: 14px;">
+      <label>A partir de (Opcional)</label>
+      <input type="date" id="inp-date-after" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; color: var(--text); font-family: var(--sans); font-size: .85rem; outline: none;" />
+      <p class="hint">Ignorar posts anteriores a esta data.</p>
+    </div>
+    <div class="field">
+      <label>O que baixar</label>
+      <div class="options">
+        <label class="opt-card">
+          <input type="radio" name="opcao" value="1" checked />
+          <span class="opt-label">
+            <span class="opt-icon">🎬</span>
+            <span class="opt-title">Só vídeos</span>
+            <span class="opt-desc">Apenas vídeos</span>
+          </span>
+        </label>
+        <label class="opt-card">
+          <input type="radio" name="opcao" value="2" />
+          <span class="opt-label">
+            <span class="opt-icon">🎞️</span>
+            <span class="opt-title">Vídeos+Reels</span>
+            <span class="opt-desc">Feed e Reels</span>
+          </span>
+        </label>
+        <label class="opt-card">
+          <input type="radio" name="opcao" value="3" />
+          <span class="opt-label">
+            <span class="opt-icon">🖼️</span>
+            <span class="opt-title">Feed Inteiro</span>
+            <span class="opt-desc">Fotos+Vídeos</span>
+          </span>
+        </label>
+        <label class="opt-card">
+          <input type="radio" name="opcao" value="5" />
+          <span class="opt-label">
+            <span class="opt-icon">⏳</span>
+            <span class="opt-title">Stories</span>
+            <span class="opt-desc">Stories atuais</span>
+          </span>
+        </label>
+      </div>
+    </div>
+    <button class="btn" id="btn-profile" onclick="startProfile()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Baixar perfil
+    </button>
+  </div>
+
+  <!-- Hashtag -->
+  <div class="panel" id="panel-hashtag">
+    <div class="field">
+      <label>Hashtag</label>
+      <input type="text" id="inp-hashtag" placeholder="natureza" />
+      <p class="hint">Sem o #, só a palavra.</p>
+    </div>
+    <div class="field" style="margin-top: 14px;">
+      <label>A partir de (Opcional)</label>
+      <input type="date" id="inp-hash-date-after" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; color: var(--text); font-family: var(--sans); font-size: .85rem; outline: none;" />
+    </div>
+    <button class="btn" id="btn-hashtag" onclick="startHashtag()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+      Baixar Hashtag
+    </button>
+  </div>
+</div>
+
+<!-- Log -->
+<div class="log-section">
+  <div class="log-header">
+    <span class="log-title">
+      <span class="status-dot" id="dot"></span>
+      Log
+    </span>
+    <button class="btn-clear" onclick="clearLog()">limpar</button>
+  </div>
+  <div id="log"><span class="lm">Aguardando...</span></div>
+</div>
+
+<!-- Login Modal -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Login Instagram</span>
+      <button class="btn-close" onclick="closeLogin()">×</button>
+    </div>
+
+    <!-- Sessões salvas -->
+    <div class="sessions-list" id="sessions-list">
+      <p class="sessions-label">Sessões salvas</p>
+      <div id="sessions-items"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchModalTab('cookie', this)">🍪 Cookie</button>
+      <button class="modal-tab" onclick="switchModalTab('pass', this)">🔑 Usuário e senha</button>
+      <button class="modal-tab" onclick="switchModalTab('auto', this)">🤖 Login Automático</button>
+    </div>
+
+    <!-- Panel: Auto (Playwright) -->
+    <div class="modal-panel" id="modal-panel-auto">
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <div class="step-body">
+            <p class="step-title">Abra o Navegador Isolado</p>
+            <p class="step-desc">Clique no botão abaixo. Uma nova janela "limpa" do navegador será aberta.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <div class="step-body">
+            <p class="step-title">Faça o Login Normalmente</p>
+            <p class="step-desc">Digite seu e-mail, senha e passe pela verificação (se houver).</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <div class="step-body">
+            <p class="step-title">Pronto!</p>
+            <p class="step-desc">Assim que logar, a janela fechará sozinha e o aplicativo capturará a sessão com segurança.</p>
+          </div>
+        </div>
+      </div>
+      <button class="btn" id="btn-auto-login" onclick="doAutoLogin()" style="margin-top:16px; background: #6366F1;">
+        Abrir Navegador de Login
+      </button>
+    </div>
+
+    <!-- Panel: Cookie -->
+    <div class="modal-panel active" id="modal-panel-cookie">
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <div class="step-body">
+            <p class="step-title">Abra o DevTools (Rede)</p>
+            <p class="step-desc">Pressione <code>F12</code> no Instagram logado e vá para a aba <b>Network (Rede)</b>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <div class="step-body">
+            <p class="step-title">Atualize e Encontre o Cookie</p>
+            <p class="step-desc">Atualize a página (F5). Clique no primeiro item da lista (provavelmente algo com <code>/</code> ou <code>graphql</code>). Vá até a aba <b>Headers (Cabeçalhos)</b>, desça até <b>Request Headers</b>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <div class="step-body">
+            <p class="step-title">Copie o valor inteiro do <code>cookie</code></p>
+            <p class="step-desc">Clique com o botão direito no valor do cabeçalho <code>cookie</code> e selecione "Copy value" (Copiar valor).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label>String do Cookie (completa)</label>
+        <textarea id="modal-cookie-string" rows="3" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px; color: var(--text); font-family: var(--mono); font-size: .875rem; outline: none; resize: vertical;" placeholder="Cole aqui todo o texto (mid=...; ig_did=...; sessionid=...; csrftoken=...)" onkeydown="if(event.ctrlKey && event.key==='Enter') doCookieLogin()"></textarea>
+        <p class="modal-hint">Isso importará TODOS os tokens de segurança, evitando o erro 403.</p>
+      </div>
+
+      <button class="btn" id="btn-cookie-login" onclick="doCookieLogin()" style="margin-top:16px">
+        Entrar com cookie
+      </button>
+    </div>
+
+    <!-- Panel: Senha -->
+    <div class="modal-panel" id="modal-panel-pass">
+      <div class="modal-field">
+        <label>Username</label>
+        <input type="text" id="modal-user" placeholder="seu_usuario" autocomplete="username" />
+      </div>
+      <div class="modal-field">
+        <label>Senha</label>
+        <input type="password" id="modal-pass" placeholder="••••••••" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter') doLogin()" />
+        <p class="modal-hint">
+          A senha não é armazenada — apenas o cookie de sessão é salvo em <code>/sessions/</code>.<br>
+          ⚠ Não funciona com contas que têm 2FA. Use a aba Cookie nesses casos.
+        </p>
+      </div>
+      <button class="btn" id="btn-login" onclick="doLogin()" style="margin-top:16px">
+        Entrar com senha
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────────────
+  let currentUser = null;
+
+  // ── Init ───────────────────────────────────────
+  (async () => {
+    const s = await fetch('/status').then(r => r.json());
+    if (s.user) setLoggedIn(s.user);
+    renderSessions(s.sessions || []);
+  })();
+
+  // ── Auth UI ────────────────────────────────────
+  function setLoggedIn(user) {
+    currentUser = user;
+    document.getElementById('auth-dot').className = 'auth-dot on';
+    document.getElementById('auth-label').innerHTML = `Logado como <b>@${user}</b>`;
+    document.getElementById('btn-open-login').style.display = 'none';
+    document.getElementById('btn-logout').style.display = '';
+  }
+
+  function setLoggedOut() {
+    currentUser = null;
+    document.getElementById('auth-dot').className = 'auth-dot off';
+    document.getElementById('auth-label').textContent = 'Não autenticado — downloads públicos apenas';
+    document.getElementById('btn-open-login').style.display = '';
+    document.getElementById('btn-logout').style.display = 'none';
+  }
+
+  function renderSessions(sessions) {
+    const list  = document.getElementById('sessions-list');
+    const items = document.getElementById('sessions-items');
+    if (!sessions.length) { list.classList.remove('has-items'); return; }
+    list.classList.add('has-items');
+    items.innerHTML = sessions.map(s => `
+      <div class="session-item" onclick="loadSession('${s}')">
+        <span class="session-name">@${s}</span>
+        <span class="session-badge">sessão salva</span>
+      </div>
+    `).join('');
+  }
+
+  function loadSession(user) {
+    document.getElementById('modal-user').value = user;
+    document.getElementById('modal-pass').value = '';
+    document.getElementById('modal-pass').placeholder = 'Deixe em branco para usar sessão salva';
+    document.getElementById('modal-pass').focus();
+  }
+
+  // ── Modal tabs ─────────────────────────────────
+  function switchModalTab(name, el) {
+    document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.modal-panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('modal-panel-' + name).classList.add('active');
+  }
+
+  // ── Modal ──────────────────────────────────────
+  function openLogin() {
+    fetch('/status').then(r => r.json()).then(s => renderSessions(s.sessions || []));
+    document.getElementById('overlay').classList.add('show');
+    setTimeout(() => document.getElementById('modal-user').focus(), 150);
+  }
+
+  function closeLogin() {
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('modal-pass').value      = '';
+    if(document.getElementById('modal-cookie-string')) {
+      document.getElementById('modal-cookie-string').value = '';
+    }
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('overlay')) closeLogin();
+  }
+
+  // ── Cookie login ───────────────────────────────
+  async function doCookieLogin() {
+    const cookie_string = document.getElementById('modal-cookie-string').value.trim();
+    if (!cookie_string) { showToast('⚠ Cole a string do cookie primeiro.'); return; }
+
+    const user_agent = navigator.userAgent;
+
+    const btn = document.getElementById('btn-cookie-login');
+    btn.disabled    = true;
+    btn.textContent = 'Validando...';
+    addLine('🍪 Validando cookie completo de sessão...');
+    closeLogin();
+    setBusy(true);
+
+    const res  = await fetch('/auth/cookie', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ cookie_string, user_agent }),
+    });
+    const data = await res.json();
+    if (!data.ok) { addLine(`❌ ${data.error}`); setBusy(false); }
+
+    btn.disabled    = false;
+    btn.textContent = 'Entrar com cookie';
+  }
+
+  // ── Login Playwright ───────────────────────────
+  async function doAutoLogin() {
+    const btn = document.getElementById('btn-auto-login');
+    btn.disabled = true;
+    btn.textContent = 'Aguardando login no navegador...';
+    addLine('🤖 Solicitando abertura do navegador de login...');
+    closeLogin();
+    setBusy(true);
+
+    const res = await fetch('/auth/playwright', { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) { addLine(`❌ Erro interno.`); setBusy(false); }
+    
+    btn.disabled = false;
+    btn.textContent = 'Abrir Navegador de Login';
+  }
+
+  // ── Login Tradicional ──────────────────────────
+  async function doLogin() {
+    const username = document.getElementById('modal-user').value.trim().replace(/^@/, '');
+    const password = document.getElementById('modal-pass').value.trim();
+    if (!username) { showToast('⚠ Informe o username.'); return; }
+
+    const btnLogin = document.getElementById('btn-login');
+    btnLogin.disabled    = true;
+    btnLogin.textContent = 'Entrando...';
+    addLine('🔐 Iniciando login...');
+    closeLogin();
+    setBusy(true);
+
+    const res  = await fetch('/auth/login', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      addLine(`❌ ${data.error}`);
+      setBusy(false);
+    }
+    btnLogin.disabled    = false;
+    btnLogin.textContent = 'Entrar';
+  }
+
+  async function doLogout() {
+    await fetch('/auth/logout', { method: 'POST' });
+    setLoggedOut();
+    showToast('👋 Sessão encerrada.');
+    addLine('🔓 Logout realizado.');
+  }
+
+  // ── SSE ────────────────────────────────────────
+  const evtSrc = new EventSource('/stream');
+  evtSrc.onmessage = e => {
+    const msg = e.data;
+    if (msg === '__PING__') return;
+
+    if (msg.startsWith('__LOGIN_OK__')) {
+      const user = msg.replace('__LOGIN_OK__', '');
+      setLoggedIn(user);
+      setBusy(false);
+      showToast(`✅ Logado como @${user}`);
+      // Atualiza lista de sessões
+      fetch('/status').then(r => r.json()).then(s => renderSessions(s.sessions || []));
+      return;
+    }
+
+    if (msg === '__LOGIN_FAIL__') {
+      setBusy(false);
+      return;
+    }
+
+    if (msg === '__DONE__') {
+      document.getElementById('dot').className = 'status-dot done';
+      setBusy(false);
+      showToast('✅ Download concluído!');
+      return;
+    }
+
+    addLine(msg);
+  };
+
+  // ── Tabs ───────────────────────────────────────
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  // ── Log ────────────────────────────────────────
+  const logEl = document.getElementById('log');
+
+  function clearLog() {
+    logEl.innerHTML = '<span class="lm">Log limpo.</span>';
+  }
+
+  function addLine(text) {
+    if (logEl.querySelector('.lm')?.textContent === 'Aguardando...') logEl.innerHTML = '';
+    const span = document.createElement('span');
+    if      (text.startsWith('✅') || text.startsWith('✔')) span.className = 'ls';
+    else if (text.startsWith('❌'))                         span.className = 'le';
+    else if (text.startsWith('⚠'))                         span.className = 'lw';
+    else if (/^[🔎👤📅🎬📁📊👥💾🔐🔓📂]/.test(text))        span.className = 'la';
+    span.textContent = text;
+    logEl.appendChild(span);
+    logEl.appendChild(document.createTextNode('\n'));
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  // ── Busy ───────────────────────────────────────
+  function setBusy(val) {
+    ['btn-url-video', 'btn-url-photo', 'btn-profile', 'btn-hashtag', 'btn-login', 'btn-cookie-login', 'btn-auto-login'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = val;
+    });
+    document.getElementById('dot').className = 'status-dot' + (val ? ' active' : '');
+  }
+
+  // ── Downloads ──────────────────────────────────
+  async function startUrl(type) {
+    const url = document.getElementById('inp-url').value.trim();
+    const metadata = document.getElementById('chk-metadata').checked;
+    if (!url) { showToast('⚠ Cole uma URL primeiro.'); return; }
+    setBusy(true);
+    addLine(`🔗 Iniciando download de ${type === 'video' ? 'Vídeo (yt-dlp)' : 'Fotos/Carrossel (gallery-dl)'}: ${url}`);
+    const res  = await fetch('/download/url', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ url, type, metadata }),
+    });
+    const data = await res.json();
+    if (!data.ok) { addLine(`❌ ${data.error}`); setBusy(false); }
+  }
+
+  async function startProfile() {
+    const username = document.getElementById('inp-username').value.trim().replace(/^@/, '');
+    const opcao    = document.querySelector('input[name="opcao"]:checked')?.value || '1';
+    const date_after = document.getElementById('inp-date-after').value;
+    const metadata = document.getElementById('chk-metadata').checked;
+    if (!username) { showToast('⚠ Informe um @ de perfil.'); return; }
+    setBusy(true);
+    addLine(`📡 Iniciando download do perfil @${username} (opção ${opcao})...`);
+    const res  = await fetch('/download/profile', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ username, opcao, date_after, metadata }),
+    });
+    const data = await res.json();
+    if (!data.ok) { addLine(`❌ ${data.error}`); setBusy(false); }
+  }
+
+  async function startHashtag() {
+    const tag = document.getElementById('inp-hashtag').value.trim().replace(/^#/, '');
+    const date_after = document.getElementById('inp-hash-date-after').value;
+    const metadata = document.getElementById('chk-metadata').checked;
+    if (!tag) { showToast('⚠ Informe uma hashtag.'); return; }
+    setBusy(true);
+    addLine(`🔎 Baixando posts da hashtag #${tag}...`);
+    const res  = await fetch('/download/hashtag', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ tag, date_after, metadata }),
+    });
+    const data = await res.json();
+    if (!data.ok) { addLine(`❌ ${data.error}`); setBusy(false); }
+  }
+
+  // ── Toast ──────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

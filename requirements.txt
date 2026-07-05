@@ -1,0 +1,2 @@
+instaloader>=4.10
+flask>=3.0
